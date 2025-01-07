@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:MPM_Lab_Reporting.Views"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:vm="clr-namespace:MPM_Lab_Reporting.ViewModels"
+             x:Class="MPM_Lab_Reporting.MainPage"
+             x:DataType="vm:MainPageViewModel">
+
+    <ScrollView>
+        <VerticalStackLayout
+            Padding="30,0"
+            Spacing="25">
+            <Image
+                Source="dotnet_bot.png"
+                HeightRequest="185"
+                Aspect="AspectFit"
+                SemanticProperties.Description="dot net bot in a hovercraft number nine" />
+
+            <Label
+                Text="MP Materials ALAB Reporting"
+                Style="{StaticResource Headline}"
+                SemanticProperties.HeadingLevel="Level1" />
+
+            <Image Source="entralogo.png"  HorizontalOptions="Center" VerticalOptions="End" HeightRequest="50" WidthRequest="50" Margin="0,0,0,10" />
+
+            <Label
+                Text="Click the button below to login to Entra"
+                Style="{StaticResource SubHeadline}"
+                SemanticProperties.HeadingLevel="Level2"
+                SemanticProperties.Description="Login to entra message">
+                <Label.Triggers>
+                    <DataTrigger TargetType="Label" Binding="{Binding IsLoggedIn}" Value="True">
+                        <Setter Property="IsVisible" Value="False" />
+                    </DataTrigger>
+                </Label.Triggers>
+            </Label>
+
+            <Button Text="{Binding ButtonText}"
+                    Command="{Binding LogInCommand}"
+                    IsEnabled="{Binding IsButtonEnabled}" />
+
+            <Button Text="Logout"
+                    Command="{Binding LogOutCommand}"
+                    IsEnabled="{Binding IsLogoutButtonEnabled}"
+                    IsVisible="False">
+                <Button.Triggers>
+                    <DataTrigger TargetType="Button" Binding="{Binding IsLoggedIn}" Value="True">
+                        <Setter Property="IsVisible" Value="True" />
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
+
+            <Image Source="mpmat.png"  HorizontalOptions="Center" VerticalOptions="End" HeightRequest="200" WidthRequest="200" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

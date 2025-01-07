@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="MPM_Lab_Reporting.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:local="clr-namespace:MPM_Lab_Reporting"
+    Shell.FlyoutBehavior="Flyout"
+    Title="MPM_Lab_Reporting">
+    <Shell.TitleView>
+        <Grid>
+            <Label Text="AssetTracker2026" HorizontalOptions="Center" VerticalOptions="Center" />
+            <ImageButton
+                Source="{FontImageSource Glyph=&#xe002;, FontFamily=MaterialIcons}"
+                Command="{Binding NavigateCommand}"
+                CommandParameter="ErrorLogView"
+                BackgroundColor="Transparent"
+                HorizontalOptions="End"
+                VerticalOptions="Center"
+                x:Name="ErrorLogButton" />
+        </Grid>
+    </Shell.TitleView>
+    <ShellContent
+     Title="Home"
+     ContentTemplate="{DataTemplate local:MainPage}"
+     Route="MainPage" />
+
+    <MenuItem
+     Text="Settings"
+     IconImageSource="{FontImageSource Glyph=&#xe8b8;, FontFamily=MaterialIcons}"
+     Command="{Binding NavigateCommand}"
+     CommandParameter="SettingsView"
+     Shell.FlyoutItemIsVisible="False" />
+
+    <Shell.FlyoutFooter>
+        <Grid Padding="10">
+            <ImageButton
+             Source="{FontImageSource Glyph=&#xe8b8;, FontFamily=MaterialIcons}"
+             Command="{Binding NavigateCommand}"
+             CommandParameter="SettingsView"
+             BackgroundColor="Transparent"
+             HorizontalOptions="Start"
+             VerticalOptions="End" />
+            <ImageButton
+             Source="{FontImageSource Glyph=&#xe002;, FontFamily=MaterialIcons}"
+             Command="{Binding NavigateCommand}"
+             CommandParameter="ErrorLogView"
+             BackgroundColor="Transparent"
+             HorizontalOptions="End"
+             VerticalOptions="Center"
+             x:Name="ErrorLogButtonFooter" />
+        </Grid>
+    </Shell.FlyoutFooter>
+
+</Shell>
