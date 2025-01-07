@@ -14,6 +14,7 @@ namespace MPM_Lab_Reporting
             InitializeComponent();
             Routing.RegisterRoute(nameof(SettingsView), typeof(SettingsView));
             Routing.RegisterRoute(nameof(ErrorLogView), typeof(ErrorLogView));
+            Routing.RegisterRoute(nameof(GridDataView), typeof(GridDataView));
 
 
             // Bind the FlyoutBehavior to the MainPageViewModel's FlyoutBehavior property

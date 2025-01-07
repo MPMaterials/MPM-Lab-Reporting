@@ -57,6 +57,8 @@ namespace MPM_Lab_Reporting
             services.AddSingleton<SettingsViewModel>();
             services.AddSingleton<ErrorLogViewModel>();
             services.AddSingleton<MainPageViewModel>();
+            services.AddSingleton<GridDataViewModel>();
+
             services.AddSingleton<MainPage>();
 
             // Register IPublicClientApplication
