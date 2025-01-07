@@ -5,7 +5,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace MPM_Lab_Reporting.Platforms.Android
+namespace MPM_Lab_Reporting
 {
     public partial class SaveService
     {

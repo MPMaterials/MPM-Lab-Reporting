@@ -4,12 +4,13 @@
              xmlns:vm="clr-namespace:MPM_Lab_Reporting.ViewModels"
              x:Class="MPM_Lab_Reporting.Views.GridDataView"
              xmlns:syncfusion="clr-namespace:Syncfusion.Maui.DataGrid;assembly=Syncfusion.Maui.DataGrid"
+             xmlns:picker="clr-namespace:Syncfusion.Maui.Picker;assembly=Syncfusion.Maui.Picker"
              x:DataType="vm:GridDataViewModel"
              Title="Grid Data View">
 
     <Grid Padding="10">
         <Grid.RowDefinitions>
-            <RowDefinition Height="20" />
+            <RowDefinition Height="auto" />
             <RowDefinition Height="auto" />
             <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
@@ -19,19 +20,17 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <StackLayout Orientation="Horizontal" Grid.Row="0" Grid.ColumnSpan="2">
-            <Label Text="{Binding ReportTitle, Mode=TwoWay}" FontSize="15" FontAttributes="Bold" FontFamily="Calibri" HorizontalOptions="Center"/>
+        <StackLayout Orientation="Vertical" Grid.Row="0" Grid.ColumnSpan="2" HorizontalOptions="Center">
+            <Label Text="{Binding ReportTitle, Mode=TwoWay}" FontSize="15" FontAttributes="Bold" FontFamily="Calibri"/>
+            <Label Text="Select Report Starting Date" FontSize="14" FontAttributes="Bold" HorizontalOptions="Center" Margin="0,0,0,10" />
+            <DatePicker x:Name="DatePicker" MinimumDate="2017/05/05" Date="{Binding SelectedDate, Mode=TwoWay}" IsEnabled="True" HeightRequest="40" WidthRequest="200" VerticalOptions="Center" />
         </StackLayout>
 
         <StackLayout Orientation="Horizontal" Grid.Row="1" Grid.ColumnSpan="2">
-            <Button Text="{Binding GetDataButtonContent}"
-                    Command="{Binding GetDataGridCommand}"
+            <Button Text="{Binding GetXRFMillP22ConReportButtonContent}"
+                    Command="{Binding GetXRFMillP22ConReportCommand}"
                     HorizontalOptions="Center" VerticalOptions="Start"
                     FontSize="14" Margin="15" />
-
-            <Button Text="🔍" Command="{Binding GridFilterFlyoutCommand}"
-                    HorizontalOptions="Center" VerticalOptions="Start"
-                    FontSize="14" Margin="15"  />
 
             <Button Text="{Binding GetRmaButtonContent}"
                     Command="{Binding GetRmaGridCommand}"
@@ -54,14 +53,16 @@
                     FontSize="14" Margin="15" />
         </StackLayout>
 
+        <StackLayout Orientation="Horizontal" Grid.Row="0" Grid.ColumnSpan="2" Margin="15">
+
+        </StackLayout>
+
         <ActivityIndicator IsRunning="{Binding IsLoading}" 
                            IsVisible="{Binding IsLoading}" 
                            VerticalOptions="Center" 
                            HorizontalOptions="Center" 
                            Color="White"
                            Grid.ColumnSpan="2"/>
-
-
 
         <syncfusion:SfDataGrid Grid.Row="3" Grid.ColumnSpan="2" 
                                ItemsSource="{Binding GridDataTable}" 
@@ -70,7 +71,7 @@
                                AllowResizingColumns="True"
                                SortingMode="Multiple"
                                AllowTriStateSorting="True"
-                               FrozenRowCount="1"
+                               FrozenRowCount="0"
                                x:Name="dataGrid">
             <syncfusion:SfDataGrid.DefaultStyle>
                 <syncfusion:DataGridStyle HeaderRowBackground="#512BD4" HeaderRowTextColor="White" RowBackground="#73808a" RowTextColor="#212121" AlternateRowBackground="#AFD5FB"/>

@@ -27,17 +27,16 @@ namespace MPM_Lab_Reporting.ViewModels
         private IPublicClientApplication _pca;
         private int _errorCounter = 0;
         private DataTable _gridDataTable = new DataTable();
-        private ICommand _gridFilterFlyoutCommand;
-        private ICommand _getDataGridCommand;
+        private ICommand _getXRFMillP22ConReportCommand;
         private ICommand _getRmaGridCommand;
         private ICommand _getRecGridCommand;
         private ICommand _getDecomGridCommand;
         private ICommand _exportCommand;
-        private ICommand _gridFilterCommand;
         private ICommand _exportToPDFCommand;
         private string _searchText = string.Empty;
-        private string _searchParameter = string.Empty;
         private string _reportTitle = string.Empty;
+        private DateTime _selectedDate;
+        private bool _isDatePickerVisible;
 
         private string _searchButtonContent = string.Empty;
         private bool _searchTermTextBoxVisible;
@@ -50,16 +49,15 @@ namespace MPM_Lab_Reporting.ViewModels
             _tools = tools ?? throw new ArgumentNullException(nameof(tools));
             _messenger = messenger ?? throw new ArgumentNullException(nameof(messenger));
             _pca = pca;
-            _gridFilterFlyoutCommand = new Command(OpenGridFilterFlyout);
-            _getDataGridCommand = new Command(async () => await ExecuteDataGridCommand(GetDataGrid));
+            _getXRFMillP22ConReportCommand = new Command(GetXRFMillP22ConReport);
             _getRmaGridCommand = new Command(async () => await ExecuteDataGridCommand(GetRmaGrid));
             _getRecGridCommand = new Command(async () => await ExecuteDataGridCommand(GetRecGrid));
             _getDecomGridCommand = new Command(async () => await ExecuteDataGridCommand(GetDecomGrid));
             _exportCommand = new Command(async () => await ExportGridClick());
-            _gridFilterCommand = new Command(async () => await ExecuteDataGridCommand(SearchGrid));
             _exportToPDFCommand = new Command(ExportToPDF);
             NavigateCommand = new Command(OnNavigate);
             GridDataTable = new DataTable();
+            SelectedDate = DateTime.Today;
             InitializeAsync().ConfigureAwait(false);
         }
 
@@ -100,7 +98,7 @@ namespace MPM_Lab_Reporting.ViewModels
         #endregion
 
         #region Variables
-        public string GetDataButtonContent => "Get Mill P22 Con Report";
+        public string GetXRFMillP22ConReportButtonContent => "Get Mill P22 Con Report";
         public string GetRmaButtonContent => "RMA Report";
         public string GetRecButtonContent => "Recycled Report";
         public string GetDecomButtonContent => "Decomissioned Report";
@@ -124,40 +122,31 @@ namespace MPM_Lab_Reporting.ViewModels
                 OnPropertyChanged();
             }
         }
+        public DateTime SelectedDate
+        {
+            get => _selectedDate;
+            set
+            {
+                _selectedDate = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public bool IsDatePickerVisible
+        {
+            get => _isDatePickerVisible;
+            set
+            {
+                _isDatePickerVisible = value;
+                OnPropertyChanged();
+            }
+        }
 
         private bool _isLoading;
         public bool IsLoading
         {
             get => _isLoading;
             set => SetProperty(ref _isLoading, value);
-        }
-        public string SearchParameter
-        {
-            get => _searchParameter;
-            set
-            {
-                if (SetProperty(ref _searchParameter, value))
-                {
-                    SearchText = string.Empty;
-                    switch (_searchParameter)
-                    {
-                        case "Finance Report Summaries":
-                            SearchButtonContent = "Export to Excel";
-                            break;
-                        case "Building":
-                            break;
-                        case "Location":
-                           
-                            break;
-                        // Add other cases as needed
-                        default:
-                            SearchButtonContent = "Search";
-                            break;
-                    }
-
-                    UpdateVisibilityProperties();
-                }
-            }
         }
         public string SearchButtonContent
         {
@@ -201,42 +190,15 @@ namespace MPM_Lab_Reporting.ViewModels
             });
         }
         private async Task OnLoadAsync()
-        {
-            SearchParameterCollection = new ObservableCollection<string>
-            {
-                "Asset Type",
-                "Building",
-                "Custodian",
-                "Description",
-                "Department",
-                "Location",
-                "Manufacturer",
-                "Model",
-                "Serial Number",
-                "Status",
-                "Purchase Order",
-                "Year Purchased",
-                "Finance Report Breakdown",
-                "Finance Report Summaries"
-            };
-
+        { 
             SearchTermTextBoxVisible = false;
 
             SearchButtonContent = "Search";
 
-            await LoadDataInBackgroundAsync();
         }
 
-        private async Task LoadDataInBackgroundAsync()
-        {
-            await Task.Run(async () =>
-            {
-
-            });
-        }
         private void UpdateVisibilityProperties()
         {
-            SearchTermTextBoxVisible = SearchParameter.Equals("Description") || SearchParameter.Equals("Serial Number") || SearchParameter.Equals("Purchase Order") || SearchParameter.Equals("Year Purchased");
         }
         private async void ExecuteDatabaseCommand(string storedProcedure, SqlParameter[]? parameters)
         {
@@ -291,22 +253,6 @@ namespace MPM_Lab_Reporting.ViewModels
                         else
                         {
                             OnPropertyChanged(nameof(GridDataTable));
-                        }
-                        break;
-                    case "GetFinanceReport":
-                        var result = await FilePicker.Default.PickAsync(new PickOptions
-                        {
-                            PickerTitle = "Save Finance Report",
-                            FileTypes = FilePickerFileType.Pdf
-                        });
-                        if (result != null)
-                        {
-                            string excelFilePath = result.FullPath;
-                            await _tools.ShowMessageAsync("Information", "Export Complete");
-                        }
-                        else
-                        {
-                            await _tools.ShowMessageAsync("Information", "Export Canceled");
                         }
                         break;
                     default:
@@ -398,95 +344,6 @@ namespace MPM_Lab_Reporting.ViewModels
             }
         }
 
-
-        private async void SearchGrid()
-        {
-            SqlParameter[] parameters = Array.Empty<SqlParameter>();
-            string storedProcedure = string.Empty;
-
-            switch (SearchParameter)
-            {
-                case "Building":
-                    storedProcedure = "SearchGrid_Building";
-                    parameters = new[] { new SqlParameter("@Building", SearchText) };
-                    break;
-                case "Location":
-                    storedProcedure = "SearchGrid_Location";
-                    parameters = new[]
-{
-                        new SqlParameter("@Location", SearchText)
-                    };
-                    break;
-                case "Description":
-                    storedProcedure = "SearchGrid_Description";
-                    parameters = new[] { new SqlParameter("@Description", SearchText) };
-                    break;
-                case "Department":
-                    storedProcedure = "SearchGrid_Department";
-                    parameters = new[] { new SqlParameter("@Description", SearchText) };
-                    break;
-                case "Manufacturer":
-                    storedProcedure = "SearchGrid_Manufacturer";
-                    parameters = new[] { new SqlParameter("@Manufacturer", SearchText) };
-                    break;
-                case "Model":
-                    storedProcedure = "SearchGrid_Model";
-                    parameters = new[] { new SqlParameter("@Model", SearchText) };
-                    break;
-                case "Asset Type":
-                    storedProcedure = "SearchGrid_AssetType";
-                    parameters = new[] { new SqlParameter("@AssetType", SearchText) };
-                    break;
-                case "Status":
-                    storedProcedure = "SearchGrid_Status";
-                    parameters = new[] { new SqlParameter("@Description", SearchText) };
-                    break;
-                case "Custodian":
-                    storedProcedure = "SearchGrid_Custodian";
-                    string[] custodian = SearchText.Split(' ');
-                    string custodianRemainder = custodian[1];
-                    string[] custRemain = custodianRemainder.Split('\t');
-                    string custodianId = custRemain[1];
-                    parameters = new[] { new SqlParameter("@CustodianID", custodianId) };
-                    break;
-                case "Serial Number":
-                    storedProcedure = "SearchGrid_SerialNumber";
-                    parameters = new[] { new SqlParameter("@SerialNumber", SearchText) };
-                    break;
-                case "Purchase Order":
-                    storedProcedure = "SearchGrid_PurchaseOrder";
-                    parameters = new[] { new SqlParameter("@PurchaseOrder", SearchText) };
-                    break;
-                case "Year Purchased":
-                    storedProcedure = "SearchGrid_AcquisitionDate";
-                    parameters = new[] { new SqlParameter("@AcquisitionDate", SearchText) };
-                    break;
-                case "Finance Report Breakdown":
-                    storedProcedure = "SearchGrid_FinanceReport";
-                    parameters = new[]
-                    {
-                        new SqlParameter("@AssetType", SearchText)
-                    };
-                    break;
-                case "Finance Report Summaries":
-                    storedProcedure = "GetFinanceReport";
-                    parameters = new[]
-                    {
-                        new SqlParameter("@AssetType", SearchText)
-                    };
-                    break;
-            }
-            await Task.Run(() => ExecuteDatabaseCommand(storedProcedure, parameters));
-            // Navigate back to GridDataView.xaml
-            OnNavigate();
-        }
-
-        private async void OpenGridFilterFlyout()
-        {
-            IsGridFilterFlyoutOpen = true;
-            await Shell.Current.GoToAsync("GridFilterView");
-        }
-
         private void ExportToPDF()
         {
             MemoryStream stream = new MemoryStream();
@@ -501,10 +358,11 @@ namespace MPM_Lab_Reporting.ViewModels
             saveService.SaveAndView("ExportFeature.pdf", "application/pdf", stream);
         }
 
-        private void GetDataGrid()
+        private void GetXRFMillP22ConReport()
         {
-            Debug.WriteLine("GetDataGridCommand executed");
-            ExecuteDatabaseCommand("GetXRFMillP22ConReport", new[] { new SqlParameter("@StartingDate", "1/2/2025") });
+            Debug.WriteLine("GetXRFMillP22ConReport executed");
+            ExecuteDatabaseCommand("GetXRFMillP22ConReport", new[] { new SqlParameter("@StartingDate", SelectedDate) });
+            IsDatePickerVisible = false;
         }
 
         private void GetRmaGrid()
@@ -525,35 +383,19 @@ namespace MPM_Lab_Reporting.ViewModels
             ExecuteDatabaseCommand("DecomReport", null);
         }
 
-
         #endregion
 
         #region Commands
-        public ICommand GridFilterFlyoutCommand => _gridFilterFlyoutCommand ??= new Command(OpenGridFilterFlyout);
-        public ICommand GetDataGridCommand => _getDataGridCommand ??= new Command(async () => await ExecuteDataGridCommand(GetDataGrid));
+        public ICommand GetXRFMillP22ConReportCommand => _getXRFMillP22ConReportCommand ??= new Command(async () => await ExecuteDataGridCommand(GetXRFMillP22ConReport));
         public ICommand GetRmaGridCommand => _getRmaGridCommand ??= new Command(async () => await ExecuteDataGridCommand(GetRmaGrid));
         public ICommand GetRecGridCommand => _getRecGridCommand ??= new Command(async () => await ExecuteDataGridCommand(GetRecGrid));
         public ICommand GetDecomGridCommand => _getDecomGridCommand ??= new Command(async () => await ExecuteDataGridCommand(GetDecomGrid));
 
         public ICommand ExportCommand => _exportCommand ??= new Command(async () => await ExportGridClick());
-        public ICommand GridFilterCommand => _gridFilterCommand ??= new Command(async () => await ExecuteDataGridCommand(SearchGrid));
         public ICommand ExportToPDFCommand => _exportToPDFCommand ??= new Command(ExportToPDF);
 
         public ICommand? NavigateCommand { get; }
         #endregion
 
-        #region GridFilterFlyout
-        private bool _isGridFilterFlyoutOpen;
-        public bool IsGridFilterFlyoutOpen
-        {
-            get => _isGridFilterFlyoutOpen;
-            set
-            {
-                if (value.Equals(_isGridFilterFlyoutOpen)) return;
-                _isGridFilterFlyoutOpen = value;
-                OnPropertyChanged(nameof(IsGridFilterFlyoutOpen));
-            }
-        }
-        #endregion
     }
 }
