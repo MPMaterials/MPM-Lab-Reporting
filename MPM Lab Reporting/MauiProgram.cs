@@ -54,6 +54,7 @@ namespace MPM_Lab_Reporting
             services.AddSingleton<IMessenger, WeakReferenceMessenger>();
             services.AddSingleton<Tools>();
             services.AddSingleton<ErrorCatch>();
+            services.AddSingleton<AppShellViewModel>();
             services.AddSingleton<SettingsViewModel>();
             services.AddSingleton<ErrorLogViewModel>();
             services.AddSingleton<MainPageViewModel>();

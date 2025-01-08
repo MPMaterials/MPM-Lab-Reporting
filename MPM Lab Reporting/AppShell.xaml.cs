@@ -18,18 +18,16 @@ namespace MPM_Lab_Reporting
 
 
             // Bind the FlyoutBehavior to the MainPageViewModel's FlyoutBehavior property
-            this.SetBinding(Shell.FlyoutBehaviorProperty, new Binding("FlyoutBehavior", source: App.Services.GetRequiredService<MainPageViewModel>()));
+            this.SetBinding(Shell.FlyoutBehaviorProperty, new Binding("FlyoutBehavior", source: App.Services.GetRequiredService<AppShellViewModel>()));
 
             // Set the BindingContext for the ImageButton
-            var mainPageViewModel = App.Services.GetRequiredService<MainPageViewModel>();
-            ErrorLogButton.SetBinding(IsVisibleProperty, new Binding("HasError", source: mainPageViewModel));
+            // Set the BindingContext for the ImageButton to AppShellViewModel
+            var appShellViewModel = App.Services.GetRequiredService<AppShellViewModel>();
+            ErrorLogButton.SetBinding(IsVisibleProperty, new Binding("HasError", source: appShellViewModel));
 
-            BindingContext = this;
+            BindingContext = appShellViewModel;
 
         }
-        public Command<string> NavigateCommand => new Command<string>(async (route) =>
-        {
-            await Shell.Current.GoToAsync(route);
-        });
+
     }
 }

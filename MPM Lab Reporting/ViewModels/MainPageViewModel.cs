@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using MPM_Lab_Reporting.Helpers;
 using Microsoft.Maui.Controls;
+using CommunityToolkit.Mvvm.Messaging;
+using MPM_Lab_Reporting.Messages;
 
 namespace MPM_Lab_Reporting.ViewModels
 {
@@ -24,8 +26,9 @@ namespace MPM_Lab_Reporting.ViewModels
             ButtonText = "Login To Entra";
             IsButtonEnabled = true;
             IsLogoutButtonEnabled = false;
-            FlyoutBehavior = FlyoutBehavior.Disabled;
-            HasError = false;
+
+            // Disable flyout on initialization
+            WeakReferenceMessenger.Default.Send(new FlyoutBehaviorMessage(FlyoutBehavior.Disabled));
 
             // Attempt silent login on initialization
             _ = AttemptSilentLoginAsync();
@@ -59,20 +62,6 @@ namespace MPM_Lab_Reporting.ViewModels
             set => SetProperty(ref _isLoggedIn, value);
         }
 
-        private FlyoutBehavior _flyoutBehavior;
-        public FlyoutBehavior FlyoutBehavior
-        {
-            get => _flyoutBehavior;
-            set => SetProperty(ref _flyoutBehavior, value);
-        }
-
-        private bool _hasError;
-        public bool HasError
-        {
-            get => _hasError;
-            set => SetProperty(ref _hasError, value);
-        }
-
         public IAsyncRelayCommand LogInCommand { get; }
         public IAsyncRelayCommand LogOutCommand { get; }
 
@@ -89,8 +78,8 @@ namespace MPM_Lab_Reporting.ViewModels
                 ButtonText = $"Logged into Entra as {userName}";
                 IsLoggedIn = true;
                 IsLogoutButtonEnabled = true;
-                FlyoutBehavior = FlyoutBehavior.Flyout;
                 IsButtonEnabled = false;
+                WeakReferenceMessenger.Default.Send(new FlyoutBehaviorMessage(FlyoutBehavior.Flyout));
             }
             else
             {
@@ -116,7 +105,8 @@ namespace MPM_Lab_Reporting.ViewModels
                 ButtonText = $"Logged into Entra as {userName}";
                 IsLoggedIn = true;
                 IsLogoutButtonEnabled = true;
-                FlyoutBehavior = FlyoutBehavior.Flyout;
+                WeakReferenceMessenger.Default.Send(new FlyoutBehaviorMessage(FlyoutBehavior.Flyout));
+
             }
             catch (Exception ex)
             {
@@ -127,7 +117,7 @@ namespace MPM_Lab_Reporting.ViewModels
                 }
                 ButtonText = "Login To Entra";
                 IsButtonEnabled = true;
-                HasError = true;
+                WeakReferenceMessenger.Default.Send(new ErrorMessage(true));
             }
         }
 
@@ -145,7 +135,7 @@ namespace MPM_Lab_Reporting.ViewModels
                 ButtonText = "Login To Entra";
                 IsButtonEnabled = true;
                 IsLogoutButtonEnabled = false;
-                FlyoutBehavior = FlyoutBehavior.Disabled;
+                WeakReferenceMessenger.Default.Send(new FlyoutBehaviorMessage(FlyoutBehavior.Disabled));
             }
             catch (Exception ex)
             {
@@ -154,7 +144,7 @@ namespace MPM_Lab_Reporting.ViewModels
                 {
                     await mainPage.DisplayAlert("Error", $"An error occurred during logout: {ex.Message}", "OK");
                 }
-                HasError = true;
+                WeakReferenceMessenger.Default.Send(new ErrorMessage(true));
             }
         }
     }
