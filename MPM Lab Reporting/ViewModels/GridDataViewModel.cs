@@ -11,12 +11,13 @@ using Microsoft.Maui.Controls;
 using System.Diagnostics;
 using Microsoft.Identity.Client;
 using MPM_Lab_Reporting.Views;
-//using Microsoft.UI.Xaml.Controls;
 using DocumentFormat.OpenXml.Drawing;
 using Syncfusion.Maui.DataGrid.Exporting;
 using Syncfusion.Pdf;
 using Syncfusion.Maui.DataGrid;
 using Syncfusion.Pdf.Grid;
+using CommunityToolkit.Mvvm.Input;
+using MPM_Lab_Reporting.Messages;
 
 namespace MPM_Lab_Reporting.ViewModels
 {
@@ -25,7 +26,6 @@ namespace MPM_Lab_Reporting.ViewModels
         private readonly Tools _tools;
         private readonly IMessenger _messenger;
         private IPublicClientApplication _pca;
-        private int _errorCounter = 0;
         private DataTable _gridDataTable = new DataTable();
         private ICommand _getXRFMillP22ConReportCommand;
         private ICommand _getRmaGridCommand;
@@ -33,11 +33,10 @@ namespace MPM_Lab_Reporting.ViewModels
         private ICommand _getDecomGridCommand;
         private ICommand _exportCommand;
         private ICommand _exportToPDFCommand;
-        private string _searchText = string.Empty;
+        private ICommand _get4000LotsFlyoutCommand;
         private string _reportTitle = string.Empty;
         private DateTime _selectedDate;
-        private bool _isDatePickerVisible;
-
+        private int _errorCounter = 0;
         private string _searchButtonContent = string.Empty;
         private bool _searchTermTextBoxVisible;
 
@@ -49,16 +48,28 @@ namespace MPM_Lab_Reporting.ViewModels
             _tools = tools ?? throw new ArgumentNullException(nameof(tools));
             _messenger = messenger ?? throw new ArgumentNullException(nameof(messenger));
             _pca = pca;
-            _getXRFMillP22ConReportCommand = new Command(GetXRFMillP22ConReport);
-            _getRmaGridCommand = new Command(async () => await ExecuteDataGridCommand(GetRmaGrid));
-            _getRecGridCommand = new Command(async () => await ExecuteDataGridCommand(GetRecGrid));
-            _getDecomGridCommand = new Command(async () => await ExecuteDataGridCommand(GetDecomGrid));
+            //_getRmaGridCommand = new Command(async () => await ExecuteDataGridCommand(GetRmaGrid));
+            //_getRecGridCommand = new Command(async () => await ExecuteDataGridCommand(GetRecGrid));
+            //_getDecomGridCommand = new Command(async () => await ExecuteDataGridCommand(GetDecomGrid));
             _exportCommand = new Command(async () => await ExportGridClick());
+            _get4000LotsFlyoutCommand = new AsyncRelayCommand(Open4000LotsFlyoutAsync);
             _exportToPDFCommand = new Command(ExportToPDF);
             NavigateCommand = new Command(OnNavigate);
             GridDataTable = new DataTable();
-            SelectedDate = DateTime.Today;
             InitializeAsync().ConfigureAwait(false);
+
+            _messenger.Register<DataTableMessage>(this, (r, m) =>
+            {
+                GridDataTable = m.Value;
+            });
+            _messenger.Register<LoadingMessage>(this, (r, m) =>
+            {
+                IsLoading = m.IsLoading;
+            });
+            _messenger.Register<ReportTitleMessage>(this, (r, m) =>
+            {
+                ReportTitle = m.ReportTitle;
+            });
         }
 
         public DataTable GridDataTable
@@ -87,7 +98,6 @@ namespace MPM_Lab_Reporting.ViewModels
             try
             {
                 await _tools.SqlSetupAsync(_pca);
-                await OnLoadAsync();
             }
             catch (Exception ex)
             {
@@ -98,20 +108,18 @@ namespace MPM_Lab_Reporting.ViewModels
         #endregion
 
         #region Variables
-        public string GetXRFMillP22ConReportButtonContent => "Get Mill P22 Con Report";
-        public string GetRmaButtonContent => "RMA Report";
-        public string GetRecButtonContent => "Recycled Report";
-        public string GetDecomButtonContent => "Decomissioned Report";
+        public string Get4000LotsButtonContent => "4000 Lots";
+        public string GetReports1ButtonContent => "Reports 1";
+        public string GetReports2ButtonContent => "Reports 2";
+        public string GetReports3ButtonContent => "Reports 3";
+        public string GetMillDataButtonContent => "Mill Data";
+        public string GetMineDataButtonContent => "Mine Data";
+        public string GetQCSampleDataButtonContent => "QC Sample Data";
+
+
+
+
         public string ExportButtonContent => "export to csv";
-        public string SearchText
-        {
-            get => _searchText;
-            set
-            {
-                _searchText = value;
-                OnPropertyChanged();
-            }
-        }
 
         public string ReportTitle
         {
@@ -119,25 +127,6 @@ namespace MPM_Lab_Reporting.ViewModels
             set
             {
                 _reportTitle = value;
-                OnPropertyChanged();
-            }
-        }
-        public DateTime SelectedDate
-        {
-            get => _selectedDate;
-            set
-            {
-                _selectedDate = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public bool IsDatePickerVisible
-        {
-            get => _isDatePickerVisible;
-            set
-            {
-                _isDatePickerVisible = value;
                 OnPropertyChanged();
             }
         }
@@ -189,111 +178,11 @@ namespace MPM_Lab_Reporting.ViewModels
                 }
             });
         }
-        private async Task OnLoadAsync()
-        { 
-            SearchTermTextBoxVisible = false;
-
-            SearchButtonContent = "Search";
-
-        }
 
         private void UpdateVisibilityProperties()
         {
         }
-        private async void ExecuteDatabaseCommand(string storedProcedure, SqlParameter[]? parameters)
-        {
-            _gridDataTable = new DataTable();
-            _errorCounter = 0;
-            IsLoading = true;
-            try
-            {
-                await _tools.EnsureConnectionOpenAsync();
-                string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
-                SqlCommand cmd = new SqlCommand(storedProcedure, _tools.Conn)
-                {
-                    CommandType = CommandType.StoredProcedure
-                };
-
-                if (parameters != null)
-                {
-                    cmd.Parameters.AddRange(parameters);
-                }
-
-                SqlDataAdapter da = new SqlDataAdapter(cmd);
-                da.Fill(_gridDataTable);
-
-                switch (storedProcedure){
-                    case "GetXRFMillP22ConReport":
-                        ReportTitle = "Mill P22 Con Report";
-                        if (_gridDataTable.Rows.Count > 2)
-                        {
-                            // Clone the last two rows for the summary
-                            System.Data.DataRow summaryRow1 = _gridDataTable.NewRow();
-                            summaryRow1.ItemArray = _gridDataTable.Rows[_gridDataTable.Rows.Count - 2].ItemArray.Clone() as object[];
-                            System.Data.DataRow summaryRow2 = _gridDataTable.NewRow();
-                            summaryRow2.ItemArray = _gridDataTable.Rows[_gridDataTable.Rows.Count - 1].ItemArray.Clone() as object[];
-
-                            // Remove the last two rows from the main data table
-                            _gridDataTable.Rows.RemoveAt(_gridDataTable.Rows.Count - 1);
-                            _gridDataTable.Rows.RemoveAt(_gridDataTable.Rows.Count - 1);
-
-                            // Insert the summary rows at the top of the main data table
-                            _gridDataTable.Rows.InsertAt(summaryRow2, 0);
-                            _gridDataTable.Rows.InsertAt(summaryRow1, 0);
-                        }
-                        GridDataTable = _gridDataTable;
-
-                        if (_gridDataTable.Rows.Count == 0)
-                        {
-                            // Handle the case where no data is returned
-                            Debug.WriteLine("No data returned from the stored procedure.");
-                            await _tools.ShowMessageAsync("No Data", "No entries found.");
-                        }
-                        else
-                        {
-                            OnPropertyChanged(nameof(GridDataTable));
-                        }
-                        break;
-                    default:
-                        GridDataTable = _gridDataTable;
-                        if (_gridDataTable.Rows.Count == 0)
-                        {
-                            // Handle the case where no data is returned
-                            Debug.WriteLine("No data returned from the stored procedure.");
-                            await _tools.ShowMessageAsync("No Data", "No entries found.");
-                        }
-                        else
-                        {
-                            OnPropertyChanged(nameof(GridDataTable));
-                        }
-                        break;
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine($"Exception in ExecuteDatabaseCommand: {e.Message}");
-                ErrorCatch.Error(e);
-                _errorCounter++;
-            }
-            finally
-            {
-                _tools.Conn?.Close();
-                IsLoading = false;
-            }
-        }
-        private async Task ExecuteDataGridCommand(Action action)
-        {
-            try
-            {
-                await Task.Run(action);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Exception in ExecuteDataGridCommand: {ex.Message}");
-                throw;
-            }
-        }
         private async Task ExportGridClick()
         {
             try
@@ -358,38 +247,47 @@ namespace MPM_Lab_Reporting.ViewModels
             saveService.SaveAndView("ExportFeature.pdf", "application/pdf", stream);
         }
 
-        private void GetXRFMillP22ConReport()
+        public IAsyncRelayCommand Get4000LotsFlyoutCommand => (IAsyncRelayCommand)_get4000LotsFlyoutCommand;
+
+        private async Task Open4000LotsFlyoutAsync()
         {
-            Debug.WriteLine("GetXRFMillP22ConReport executed");
-            ExecuteDatabaseCommand("GetXRFMillP22ConReport", new[] { new SqlParameter("@StartingDate", SelectedDate) });
-            IsDatePickerVisible = false;
+            await Shell.Current.GoToAsync(nameof(Get4000LotsView));
+        }
+
+        private ICommand _clearDataGridCommand;
+
+        public ICommand ClearDataGridCommand => _clearDataGridCommand ??= new RelayCommand(ClearDataGrid);
+
+        private void ClearDataGrid()
+        {
+            GridDataTable.Clear();
         }
 
         private void GetRmaGrid()
         {
             _errorCounter = 0;
-            ExecuteDatabaseCommand("RMAReport", null);
+            //ExecuteDatabaseCommand("RMAReport", null);
         }
 
         private void GetRecGrid()
         {
             _errorCounter = 0;
-            ExecuteDatabaseCommand("RECReport", new[] { new SqlParameter("@Rec", "RECYCLED       ") });
+            //ExecuteDatabaseCommand("RECReport", new[] { new SqlParameter("@Rec", "RECYCLED       ") });
         }
 
         private void GetDecomGrid()
         {
             _errorCounter = 0;
-            ExecuteDatabaseCommand("DecomReport", null);
+            //ExecuteDatabaseCommand("DecomReport", null);
         }
 
         #endregion
 
         #region Commands
-        public ICommand GetXRFMillP22ConReportCommand => _getXRFMillP22ConReportCommand ??= new Command(async () => await ExecuteDataGridCommand(GetXRFMillP22ConReport));
-        public ICommand GetRmaGridCommand => _getRmaGridCommand ??= new Command(async () => await ExecuteDataGridCommand(GetRmaGrid));
-        public ICommand GetRecGridCommand => _getRecGridCommand ??= new Command(async () => await ExecuteDataGridCommand(GetRecGrid));
-        public ICommand GetDecomGridCommand => _getDecomGridCommand ??= new Command(async () => await ExecuteDataGridCommand(GetDecomGrid));
+        //public ICommand GetXRFMillP22ConReportCommand => _getXRFMillP22ConReportCommand ??= new Command(async () => await ExecuteDataGridCommand(GetXRFMillP22ConReport));
+        //public ICommand GetRmaGridCommand => _getRmaGridCommand ??= new Command(async () => await ExecuteDataGridCommand(GetRmaGrid));
+        //public ICommand GetRecGridCommand => _getRecGridCommand ??= new Command(async () => await ExecuteDataGridCommand(GetRecGrid));
+        //public ICommand GetDecomGridCommand => _getDecomGridCommand ??= new Command(async () => await ExecuteDataGridCommand(GetDecomGrid));
 
         public ICommand ExportCommand => _exportCommand ??= new Command(async () => await ExportGridClick());
         public ICommand ExportToPDFCommand => _exportToPDFCommand ??= new Command(ExportToPDF);

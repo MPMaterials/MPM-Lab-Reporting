@@ -20,41 +20,60 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <StackLayout Orientation="Vertical" Grid.Row="0" Grid.ColumnSpan="2" HorizontalOptions="Center">
-            <Label Text="{Binding ReportTitle, Mode=TwoWay}" FontSize="15" FontAttributes="Bold" FontFamily="Calibri"/>
-            <Label Text="Select Report Starting Date" FontSize="14" FontAttributes="Bold" HorizontalOptions="Center" Margin="0,0,0,10" />
-            <DatePicker x:Name="DatePicker" MinimumDate="2017/05/05" Date="{Binding SelectedDate, Mode=TwoWay}" IsEnabled="True" HeightRequest="40" WidthRequest="200" VerticalOptions="Center" />
+        <StackLayout Orientation="Horizontal" Grid.Row="0" Grid.ColumnSpan="2" HorizontalOptions="Center">
+            <Label Text="{Binding ReportTitle, Mode=TwoWay}" FontSize="30" FontAttributes="Bold" FontFamily="Calibri" HorizontalOptions="Center" Margin="0,0,20,0"/>
+            <Button Text="Clear Data Grid"
+                   Command="{Binding ClearDataGridCommand}"
+                   HorizontalOptions="End"
+                   VerticalOptions="Center"
+                   FontSize="14"
+                    />
         </StackLayout>
 
         <StackLayout Orientation="Horizontal" Grid.Row="1" Grid.ColumnSpan="2">
-            <Button Text="{Binding GetXRFMillP22ConReportButtonContent}"
-                    Command="{Binding GetXRFMillP22ConReportCommand}"
+            <Button Text="{Binding Get4000LotsButtonContent}"
+                    Command="{Binding Get4000LotsFlyoutCommand}"
                     HorizontalOptions="Center" VerticalOptions="Start"
                     FontSize="14" Margin="15" />
 
-            <Button Text="{Binding GetRmaButtonContent}"
-                    Command="{Binding GetRmaGridCommand}"
-                    HorizontalOptions="Center" VerticalOptions="Start"
-                    FontSize="14" Margin="15" />
-
-            <Button Text="{Binding GetRecButtonContent}"
+            <Button Text="{Binding GetReports1ButtonContent}"
                     Command="{Binding GetRecGridCommand}"
                     HorizontalOptions="Center" VerticalOptions="Start"
                     FontSize="14" Margin="15" />
 
-            <Button Text="{Binding GetDecomButtonContent}"
+            <Button Text="{Binding GetReports2ButtonContent}"
+                    Command="{Binding GetDecomGridCommand}"
+                    HorizontalOptions="Center" VerticalOptions="Start"
+                    FontSize="14" Margin="15" />
+            
+            <Button Text="{Binding GetReports3ButtonContent}"
+                    Command="{Binding GetDecomGridCommand}"
+                    HorizontalOptions="Center" VerticalOptions="Start"
+                    FontSize="14" Margin="15" />
+
+            <Button Text="{Binding GetMillDataButtonContent}"
+                    Command="{Binding GetDecomGridCommand}"
+                    HorizontalOptions="Center" VerticalOptions="Start"
+                    FontSize="14" Margin="15" />
+
+            <Button Text="{Binding GetMineDataButtonContent}"
+                    Command="{Binding GetDecomGridCommand}"
+                    HorizontalOptions="Center" VerticalOptions="Start"
+                    FontSize="14" Margin="15" />
+
+            <Button Text="{Binding GetQCSampleDataButtonContent}"
                     Command="{Binding GetDecomGridCommand}"
                     HorizontalOptions="Center" VerticalOptions="Start"
                     FontSize="14" Margin="15" />
 
             <Button Text="Export To PDF"
                     Command="{Binding ExportToPDFCommand}"
-                    HorizontalOptions="Center" VerticalOptions="Start"
+                    HorizontalOptions="End" VerticalOptions="Start"
                     FontSize="14" Margin="15" />
         </StackLayout>
 
         <StackLayout Orientation="Horizontal" Grid.Row="0" Grid.ColumnSpan="2" Margin="15">
-
+ 
         </StackLayout>
 
         <ActivityIndicator IsRunning="{Binding IsLoading}" 

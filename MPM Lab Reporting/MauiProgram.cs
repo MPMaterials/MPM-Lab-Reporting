@@ -59,6 +59,7 @@ namespace MPM_Lab_Reporting
             services.AddSingleton<ErrorLogViewModel>();
             services.AddSingleton<MainPageViewModel>();
             services.AddSingleton<GridDataViewModel>();
+            services.AddSingleton<Get4000LotsViewModel>();
 
             services.AddSingleton<MainPage>();
 
