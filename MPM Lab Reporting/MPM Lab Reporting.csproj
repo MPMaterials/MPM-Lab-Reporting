@@ -73,6 +73,15 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Update="Views\GetMillDataView.xaml.cs">
+	    <DependentUpon>GetMillDataView.xaml</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <MauiXaml Update="Views\GetMillDataView.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
 	  <MauiXaml Update="Views\Get4000LotsView.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>

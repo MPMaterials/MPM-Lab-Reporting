@@ -14,24 +14,27 @@ using MPM_Lab_Reporting.Views;
 
 namespace MPM_Lab_Reporting.ViewModels
 {
-    public partial class Get4000LotsViewModel : ObservableObject
+    public partial class GetMillDataViewModel : ObservableObject
     {
         private readonly Tools _tools;
         private readonly IMessenger _messenger;
         private readonly DatabaseHelper _databaseHelper;
         private IPublicClientApplication _pca;
-        private ICommand _get4000LotCertBillReportCommand;
+        private ICommand _getXRFMillP22ConReportCommand;
+        private ICommand _getXRFMillCompositeReportCommand;
         private string _reportTitle = string.Empty;
+        private DateTime _selectedDate;
         private bool _isLoading;
-        private string _lotNumber = string.Empty;
 
-        public Get4000LotsViewModel(Tools tools, IMessenger messenger, IPublicClientApplication pca)
+        public GetMillDataViewModel(Tools tools, IMessenger messenger, IPublicClientApplication pca)
         {
             _tools = tools ?? throw new ArgumentNullException(nameof(tools));
             _messenger = messenger ?? throw new ArgumentNullException(nameof(messenger));
             _pca = pca;
             _databaseHelper = new DatabaseHelper(_tools);
-            _get4000LotCertBillReportCommand = new AsyncRelayCommand(ExecuteGet4000LotCertBillReportAsync);
+            _getXRFMillP22ConReportCommand = new AsyncRelayCommand(ExecuteGetXRFMillP22ConReportAsync);
+            _getXRFMillCompositeReportCommand = new AsyncRelayCommand(ExecuteGetXRFMillCompositeReportAsync);
+            SelectedDate = DateTime.Today;
             NavigateCommand = new Command(OnNavigate);
             InitializeAsync().ConfigureAwait(false);
 
@@ -50,7 +53,9 @@ namespace MPM_Lab_Reporting.ViewModels
         }
 
         #region Variables
-        public string Get4000LotCertBillReportButtonContent => "Get 4000 Lot Cert Bill";
+        public string GetXRFMillP22ConReportButtonContent => "Get Mill P22 Con Report";
+        public string GetXRFMillCompositeReportButtonContent => "Get Mill Composite Report";
+
         public string ReportTitle
         {
             get => _reportTitle;
@@ -61,16 +66,15 @@ namespace MPM_Lab_Reporting.ViewModels
                 _messenger.Send(new ReportTitleMessage(_reportTitle));
             }
         }
-        public string LotNumber
+        public DateTime SelectedDate
         {
-            get => _lotNumber;
+            get => _selectedDate;
             set
             {
-                _lotNumber = value;
+                _selectedDate = value;
                 OnPropertyChanged();
             }
         }
-
         public bool IsLoading
         {
             get => _isLoading;
@@ -79,23 +83,41 @@ namespace MPM_Lab_Reporting.ViewModels
         #endregion
 
         #region Report Methods
-        private async Task ExecuteGet4000LotCertBillReportAsync()
+        private async Task ExecuteGetXRFMillP22ConReportAsync()
         {
-            ReportTitle = "4000 Lot Cert Bill";
+            ReportTitle = "Mill P22 Con Report";
             _messenger.Send(new ReportTitleMessage(ReportTitle));
             OnNavigate();
-            await _databaseHelper.ExecuteDataGridCommandAsync(Get4000LotCertBillReport);
+            await _databaseHelper.ExecuteDataGridCommandAsync(GetXRFMillP22ConReport);
         }
 
-        private async void Get4000LotCertBillReport()
+        private async Task ExecuteGetXRFMillCompositeReportAsync()
         {
-            Debug.WriteLine("Get4000LotCertBillReport executed");
-            var dataTable = await _databaseHelper.ExecuteDatabaseCommandAsync("Get4000LotCertBillReport", new[] { new SqlParameter("@LotNumber", LotNumber) }, SetLoading);
+            ReportTitle = "Mill Composite Report";
+            _messenger.Send(new ReportTitleMessage(ReportTitle));
+            OnNavigate();
+            await _databaseHelper.ExecuteDataGridCommandAsync(() => GetXRFMillCompositeReport(100));
+        }
+
+        private async void GetXRFMillP22ConReport()
+        {
+            Debug.WriteLine("GetXRFMillP22ConReport executed");
+            var dataTable = await _databaseHelper.ExecuteDatabaseCommandAsync("GetXRFMillP22ConReport", new[] { new SqlParameter("@StartingDate", SelectedDate) }, SetLoading);
             if (dataTable != null)
             {
-                Process4000LotCertBillReportData(dataTable);
+                ProcessXRFMillP22ConReportData(dataTable);
                 _messenger.Send(new DataTableMessage(dataTable));
 
+            }
+        }
+        private async void GetXRFMillCompositeReport(int count)
+        {
+            Debug.WriteLine("GetXRFMillCompositeReport executed");
+            var dataTable = await _databaseHelper.ExecuteDatabaseCommandAsync("GetXRFMillCompositeReport", null, SetLoading);
+            if (dataTable != null)
+            {
+                var limitedDataTable = dataTable.AsEnumerable().Take(count).CopyToDataTable();
+                _messenger.Send(new DataTableMessage(limitedDataTable));
             }
         }
 
@@ -107,7 +129,7 @@ namespace MPM_Lab_Reporting.ViewModels
         #endregion
 
         #region Report Transformations
-        private void Process4000LotCertBillReportData(DataTable dataTable)
+        private void ProcessXRFMillP22ConReportData(DataTable dataTable)
         {
             if (dataTable.Rows.Count > 2)
             {
@@ -137,7 +159,8 @@ namespace MPM_Lab_Reporting.ViewModels
         #region Commands
         public ICommand? NavigateCommand { get; }
 
-        public ICommand Get4000LotCertBillReportCommand => _get4000LotCertBillReportCommand ??= new AsyncRelayCommand(ExecuteGet4000LotCertBillReportAsync);
+        public ICommand GetXRFMillP22ConReportCommand => _getXRFMillP22ConReportCommand ??= new AsyncRelayCommand(ExecuteGetXRFMillP22ConReportAsync);
+        public ICommand GetXRFMillCompositeReportCommand => _getXRFMillCompositeReportCommand ??= new AsyncRelayCommand(ExecuteGetXRFMillCompositeReportAsync);
 
         #endregion
 

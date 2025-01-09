@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:MPM_Lab_Reporting.Views"
              xmlns:vm="clr-namespace:MPM_Lab_Reporting.ViewModels"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              x:Class="MPM_Lab_Reporting.Views.GridDataView"
              xmlns:syncfusion="clr-namespace:Syncfusion.Maui.DataGrid;assembly=Syncfusion.Maui.DataGrid"
              xmlns:picker="clr-namespace:Syncfusion.Maui.Picker;assembly=Syncfusion.Maui.Picker"
@@ -45,14 +46,14 @@
                     Command="{Binding GetDecomGridCommand}"
                     HorizontalOptions="Center" VerticalOptions="Start"
                     FontSize="14" Margin="15" />
-            
+
             <Button Text="{Binding GetReports3ButtonContent}"
                     Command="{Binding GetDecomGridCommand}"
                     HorizontalOptions="Center" VerticalOptions="Start"
                     FontSize="14" Margin="15" />
 
             <Button Text="{Binding GetMillDataButtonContent}"
-                    Command="{Binding GetDecomGridCommand}"
+                    Command="{Binding GetMillDataFlyoutCommand}"
                     HorizontalOptions="Center" VerticalOptions="Start"
                     FontSize="14" Margin="15" />
 
@@ -72,17 +73,17 @@
                     FontSize="14" Margin="15" />
         </StackLayout>
 
-        <StackLayout Orientation="Horizontal" Grid.Row="0" Grid.ColumnSpan="2" Margin="15">
- 
-        </StackLayout>
-
         <ActivityIndicator IsRunning="{Binding IsLoading}" 
                            IsVisible="{Binding IsLoading}" 
                            VerticalOptions="Center" 
                            HorizontalOptions="Center" 
                            Color="White"
+                           Grid.Row="2"
                            Grid.ColumnSpan="2"/>
 
+
+        <Button Text="Load All" Grid.Row="2"
+                Command="{Binding LoadAllItemsCommand}" />
         <syncfusion:SfDataGrid Grid.Row="3" Grid.ColumnSpan="2" 
                                ItemsSource="{Binding GridDataTable}" 
                                AutoGenerateColumnsMode="ResetAll"

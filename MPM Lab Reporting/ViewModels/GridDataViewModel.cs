@@ -18,41 +18,39 @@ using Syncfusion.Maui.DataGrid;
 using Syncfusion.Pdf.Grid;
 using CommunityToolkit.Mvvm.Input;
 using MPM_Lab_Reporting.Messages;
+using Syncfusion.Maui.Data;
 
 namespace MPM_Lab_Reporting.ViewModels
 {
-    public class GridDataViewModel : ObservableObject
+    public class GridDataViewModel : ObservableObject, ISupportIncrementalLoading
     {
         private readonly Tools _tools;
         private readonly IMessenger _messenger;
         private IPublicClientApplication _pca;
         private DataTable _gridDataTable = new DataTable();
-        private ICommand _getXRFMillP22ConReportCommand;
-        private ICommand _getRmaGridCommand;
-        private ICommand _getRecGridCommand;
-        private ICommand _getDecomGridCommand;
         private ICommand _exportCommand;
         private ICommand _exportToPDFCommand;
         private ICommand _get4000LotsFlyoutCommand;
+        private ICommand _getMillDataFlyoutCommand;
+        private ICommand _clearDataGridCommand;
+        private ICommand _loadAllItemsCommand;
+        private ICommand _loadMoreItemsCommand;
         private string _reportTitle = string.Empty;
         private DateTime _selectedDate;
         private int _errorCounter = 0;
         private string _searchButtonContent = string.Empty;
-        private bool _searchTermTextBoxVisible;
-
-        private ObservableCollection<string> _searchParameterCollection = new ObservableCollection<string>();
-
+        private bool _hasMoreItems = true;
+        private int _itemsPerPage = 100;
+        private DatabaseHelper _databaseHelper;
 
         public GridDataViewModel(Tools tools, IMessenger messenger, IPublicClientApplication pca)
         {
             _tools = tools ?? throw new ArgumentNullException(nameof(tools));
             _messenger = messenger ?? throw new ArgumentNullException(nameof(messenger));
             _pca = pca;
-            //_getRmaGridCommand = new Command(async () => await ExecuteDataGridCommand(GetRmaGrid));
-            //_getRecGridCommand = new Command(async () => await ExecuteDataGridCommand(GetRecGrid));
-            //_getDecomGridCommand = new Command(async () => await ExecuteDataGridCommand(GetDecomGrid));
-            _exportCommand = new Command(async () => await ExportGridClick());
+            _databaseHelper = new DatabaseHelper(_tools);
             _get4000LotsFlyoutCommand = new AsyncRelayCommand(Open4000LotsFlyoutAsync);
+            _getMillDataFlyoutCommand = new AsyncRelayCommand(OpenMillDataFlyoutAsync);
             _exportToPDFCommand = new Command(ExportToPDF);
             NavigateCommand = new Command(OnNavigate);
             GridDataTable = new DataTable();
@@ -108,6 +106,7 @@ namespace MPM_Lab_Reporting.ViewModels
         #endregion
 
         #region Variables
+        public bool HasMoreItems => _hasMoreItems;
         public string Get4000LotsButtonContent => "4000 Lots";
         public string GetReports1ButtonContent => "Reports 1";
         public string GetReports2ButtonContent => "Reports 2";
@@ -115,9 +114,6 @@ namespace MPM_Lab_Reporting.ViewModels
         public string GetMillDataButtonContent => "Mill Data";
         public string GetMineDataButtonContent => "Mine Data";
         public string GetQCSampleDataButtonContent => "QC Sample Data";
-
-
-
 
         public string ExportButtonContent => "export to csv";
 
@@ -147,21 +143,10 @@ namespace MPM_Lab_Reporting.ViewModels
             }
         }
 
-        public bool SearchTermTextBoxVisible
-        {
-            get => _searchTermTextBoxVisible;
-            set => SetProperty(ref _searchTermTextBoxVisible, value);
-        }
-
         #endregion
-
-        #region ObservableCollections
-
-
-        public ObservableCollection<string> SearchParameterCollection
+        private void SetLoading(bool isLoading)
         {
-            get => _searchParameterCollection;
-            set => SetProperty(ref _searchParameterCollection, value);
+            IsLoading = isLoading;
         }
         private async void OnNavigate()
         {
@@ -178,59 +163,56 @@ namespace MPM_Lab_Reporting.ViewModels
                 }
             });
         }
-
-        private void UpdateVisibilityProperties()
+        public void LoadMoreItemsAsync(uint count)
         {
+            _ = LoadMoreItemsInternalAsync(count);
         }
-
-        private async Task ExportGridClick()
+        private async Task LoadMoreItemsInternalAsync(uint count)
         {
             try
             {
-                await Task.Run(ExportGrid);
+                // Load the next set of items
+                var newItems = await LoadDataAsync((int)count);
+                foreach (var item in newItems)
+                {
+                    var newRow = GridDataTable.NewRow();
+                    newRow.ItemArray = item.ItemArray;
+                    GridDataTable.Rows.Add(newRow);
+                }
+
+                // Check if there are more items to load
+                _hasMoreItems = newItems.Count >= _itemsPerPage;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Exception in ExportGridClick: {ex.Message}");
-                throw;
+                Debug.WriteLine($"Exception in LoadMoreItemsAsync: {ex.Message}");
+                _hasMoreItems = false;
             }
         }
-        private async void ExportGrid()
+        private async void LoadAllItems()
         {
             try
             {
-                string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                var customFileType = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
+                var allItems = await LoadDataAsync(int.MaxValue);
+                foreach (var item in allItems)
                 {
-                    { DevicePlatform.iOS, new[] { "public.comma-separated-values-text" } }, // or "public.csv"
-                    { DevicePlatform.Android, new[] { "text/csv" } },
-                    { DevicePlatform.WinUI, new[] { ".csv" } },
-                    { DevicePlatform.MacCatalyst, new[] { "public.comma-separated-values-text" } }, // or "public.csv"
-                    { DevicePlatform.Tizen, new[] { "text/csv" } },
-                });
-                var options = new PickOptions
-                {
-                    PickerTitle = "Save Grid Data",
-                    FileTypes = customFileType
-                };
-
-                var result = await FilePicker.Default.PickAsync(options);
-
-                if (result != null)
-                {
-                    string excelFilePath = result.FullPath;
-                    await _tools.ShowMessageAsync("Information", "Export Complete");
+                    var newRow = GridDataTable.NewRow();
+                    newRow.ItemArray = item.ItemArray;
+                    GridDataTable.Rows.Add(newRow);
                 }
-                else
-                {
-                    await _tools.ShowMessageAsync("Information", "Export Canceled");
-                }
+
+                _hasMoreItems = false;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Exception in ExportGrid: {ex.Message}");
-                throw;
+                Debug.WriteLine($"Exception in LoadAllItems: {ex.Message}");
             }
+        }
+
+        private async Task<List<System.Data.DataRow>> LoadDataAsync(int count)
+        {
+            var dataTable = await _databaseHelper.ExecuteDatabaseCommandAsync("GetXRFMillCompositeReport", null, SetLoading);
+            return dataTable.AsEnumerable().Skip(GridDataTable.Rows.Count).Take(count).ToList();
         }
 
         private void ExportToPDF()
@@ -248,51 +230,33 @@ namespace MPM_Lab_Reporting.ViewModels
         }
 
         public IAsyncRelayCommand Get4000LotsFlyoutCommand => (IAsyncRelayCommand)_get4000LotsFlyoutCommand;
+        public IAsyncRelayCommand GetMillDataFlyoutCommand => (IAsyncRelayCommand)_getMillDataFlyoutCommand;
+
 
         private async Task Open4000LotsFlyoutAsync()
         {
             await Shell.Current.GoToAsync(nameof(Get4000LotsView));
         }
+        private async Task OpenMillDataFlyoutAsync()
+        {
+            await Shell.Current.GoToAsync(nameof(GetMillDataView));
+        }
 
-        private ICommand _clearDataGridCommand;
 
-        public ICommand ClearDataGridCommand => _clearDataGridCommand ??= new RelayCommand(ClearDataGrid);
 
         private void ClearDataGrid()
         {
             GridDataTable.Clear();
         }
 
-        private void GetRmaGrid()
-        {
-            _errorCounter = 0;
-            //ExecuteDatabaseCommand("RMAReport", null);
-        }
-
-        private void GetRecGrid()
-        {
-            _errorCounter = 0;
-            //ExecuteDatabaseCommand("RECReport", new[] { new SqlParameter("@Rec", "RECYCLED       ") });
-        }
-
-        private void GetDecomGrid()
-        {
-            _errorCounter = 0;
-            //ExecuteDatabaseCommand("DecomReport", null);
-        }
-
-        #endregion
 
         #region Commands
-        //public ICommand GetXRFMillP22ConReportCommand => _getXRFMillP22ConReportCommand ??= new Command(async () => await ExecuteDataGridCommand(GetXRFMillP22ConReport));
-        //public ICommand GetRmaGridCommand => _getRmaGridCommand ??= new Command(async () => await ExecuteDataGridCommand(GetRmaGrid));
-        //public ICommand GetRecGridCommand => _getRecGridCommand ??= new Command(async () => await ExecuteDataGridCommand(GetRecGrid));
-        //public ICommand GetDecomGridCommand => _getDecomGridCommand ??= new Command(async () => await ExecuteDataGridCommand(GetDecomGrid));
-
-        public ICommand ExportCommand => _exportCommand ??= new Command(async () => await ExportGridClick());
         public ICommand ExportToPDFCommand => _exportToPDFCommand ??= new Command(ExportToPDF);
-
         public ICommand? NavigateCommand { get; }
+        public ICommand LoadMoreItemsCommand => new RelayCommand<uint>(LoadMoreItemsAsync);
+        public ICommand LoadAllItemsCommand => new RelayCommand(LoadAllItems);
+        public ICommand ClearDataGridCommand => _clearDataGridCommand ??= new RelayCommand(ClearDataGrid);
+
         #endregion
 
     }

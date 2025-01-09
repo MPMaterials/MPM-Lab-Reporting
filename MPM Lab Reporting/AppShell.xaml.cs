@@ -16,6 +16,7 @@ namespace MPM_Lab_Reporting
             Routing.RegisterRoute(nameof(ErrorLogView), typeof(ErrorLogView));
             Routing.RegisterRoute(nameof(GridDataView), typeof(GridDataView));
             Routing.RegisterRoute(nameof(Get4000LotsView), typeof(Get4000LotsView));
+            Routing.RegisterRoute(nameof(GetMillDataView), typeof(GetMillDataView));
 
 
             // Bind the FlyoutBehavior to the MainPageViewModel's FlyoutBehavior property
